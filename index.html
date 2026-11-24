@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>MahjongON!</title>
+  <meta name="description" content="MahjongON!: Mahjong Riichi (japonês) no navegador, contra três robôs, com as peças originais em SVG. Grátis e funciona offline." />
+  <meta name="theme-color" content="#0d3c75" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/favicon.ico" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
+  <script>/* aplica tema e animações antes de pintar (evita "piscar") */
+  try{var c={};try{c=JSON.parse(localStorage.getItem('mahjongon.cfg')||'{}')||{}}catch(e){}var d=document.documentElement,r=c.reduzir,t=c.tema;
+  if(t!=='escuro'&&t!=='claro')t=c.escuro===true?'escuro':null;
+  if(r===undefined||r===null)r=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(t?t==='escuro':matchMedia('(prefers-color-scheme: dark)').matches)d.setAttribute('data-tema','escuro');if(r)d.setAttribute('data-reduzir','1');}catch(e){}</script>
+  <link rel="stylesheet" href="on.css" />
+  <link rel="stylesheet" href="colorido.css" />
+  <script defer src="on.js"></script>
+  <script defer src="sorteio.js"></script>
+  <script defer src="nucleo.js"></script>
+  <script defer src="riichi.js"></script>
+  <script defer src="partida.js"></script>
+  <script defer src="bot.js"></script>
+  <script defer src="textos.js"></script>
+  <script defer src="javinhas.js"></script>
+</head>
+<body>
+  <header>
+    <button id="menu-btn" type="button" aria-label="Abrir menu" aria-controls="drawer" data-abrir="drawer">☰</button>
+    <h1>MahjongON!</h1>
+    <button id="howto-btn" class="header-btn" type="button" aria-haspopup="dialog" data-abrir="howto-modal">Como Jogar</button>
+  </header>
+
+  <div id="overlay" hidden></div>
+
+  <!-- Modal "Como Jogar" -->
+  <div id="howto-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="howto-title">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h2 id="howto-title">Como Jogar MahjongON!</h2>
+        <button class="modal-x" type="button" aria-label="Fechar" data-fechar>✕</button>
+      </div>
+      <div class="abas" role="tablist" aria-label="Seções da ajuda">
+        <button class="aba" id="aba-site" type="button" role="tab" aria-selected="true" aria-controls="painel-site">O site</button>
+        <button class="aba" id="aba-regras" type="button" role="tab" aria-selected="false" aria-controls="painel-regras" tabindex="-1">Regras</button>
+        <button class="aba" id="aba-yaku" type="button" role="tab" aria-selected="false" aria-controls="painel-yaku" tabindex="-1">Yaku</button>
+        <button class="aba" id="aba-dicas" type="button" role="tab" aria-selected="false" aria-controls="painel-dicas" tabindex="-1">Dicas</button>
+      </div>
+      <div class="modal-body texto-ajuda" id="painel-site" role="tabpanel" aria-labelledby="aba-site"></div>
+      <div class="modal-body texto-ajuda" id="painel-regras" role="tabpanel" aria-labelledby="aba-regras" hidden></div>
+      <div class="modal-body texto-ajuda" id="painel-yaku" role="tabpanel" aria-labelledby="aba-yaku" hidden></div>
+      <div class="modal-body texto-ajuda" id="painel-dicas" role="tabpanel" aria-labelledby="aba-dicas" hidden></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="button" data-fechar data-foco>Entendi!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal "Tabela de yaku" (aberta a qualquer hora) -->
+  <div id="yaku-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="yaku-title">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h2 id="yaku-title">Tabela de yaku</h2>
+        <button class="modal-x" type="button" aria-label="Fechar" data-fechar>✕</button>
+      </div>
+      <div class="modal-body texto-ajuda" id="yaku-corpo"></div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="button" data-fechar data-foco>Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal "Nova partida" -->
+  <div id="partida-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="partida-title">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h2 id="partida-title">Nova partida</h2>
+        <button class="modal-x" type="button" aria-label="Fechar" data-fechar>✕</button>
+      </div>
+      <div class="modal-body" id="partida-corpo">
+        <h3 class="sec-tit" id="sec-modo">Jogo</h3>
+        <div class="tiles" id="tiles-modo" role="group" aria-labelledby="sec-modo"></div>
+        <div id="opcoes-modo"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" type="button" id="partida-jogar" data-foco>Jogar</button>
+      </div>
+    </div>
+  </div>
+
+  <main>
+    <section id="game-area" aria-label="Mesa de mahjong e controles">
+      <button id="modo-btn" type="button" aria-haspopup="dialog" data-abrir="partida-modal">
+        <span id="modo-mini" aria-hidden="true"></span>
+        <span class="modo-txt"><span class="nivel-rotulo">Partida</span><b id="modo-nome">Riichi</b><span id="modo-sub"></span></span>
+        <span class="modo-trocar"><span class="trocar-txt">Trocar</span><span class="ic" id="modo-chevron"></span></span>
+      </button>
+
+      <div id="hud">
+        <div class="hud-box"><span class="hud-label">Rodada</span><b id="hud-v1">Leste 1</b></div>
+        <div class="hud-box"><span class="hud-label">Muro</span><b id="hud-v2">70</b></div>
+        <div class="hud-box"><span class="hud-label">Honba</span><b id="hud-v3">0</b></div>
+        <div class="hud-box"><span class="hud-label">Riichi</span><b id="hud-v4">0</b></div>
+      </div>
+
+      <div id="mesa-box">
+        <div id="mesa" role="group" aria-label="Mesa de mahjong">
+          <div class="rio rio-t" id="rio-2" aria-label="Descartes do jogador de cima"></div>
+          <div class="rio rio-l" id="rio-3" aria-label="Descartes do jogador da esquerda"></div>
+          <div id="centro" aria-live="off">
+            <div class="c-rod" id="c-rod">Leste 1</div>
+            <div class="c-lin" id="c-lin"></div>
+            <div class="c-dora" id="c-dora" aria-label="Indicadores de dora"></div>
+          </div>
+          <div class="rio rio-r" id="rio-1" aria-label="Descartes do jogador da direita"></div>
+          <div class="rio rio-b" id="rio-0" aria-label="Seus descartes"></div>
+          <span class="canto canto-tl" id="cn-3" aria-hidden="true"></span>
+          <span class="canto canto-tr" id="cn-2" aria-hidden="true"></span>
+          <span class="canto canto-bl" id="cn-0" aria-hidden="true"></span>
+          <span class="canto canto-br" id="cn-1" aria-hidden="true"></span>
+        </div>
+        <div id="mao" role="group" aria-label="Sua mão">
+          <div id="mao-fila"></div>
+          <div id="mao-melds"></div>
+        </div>
+        <div id="tela" hidden>
+          <div class="tela-card" role="dialog" aria-live="polite">
+            <h2 id="tela-titulo"></h2>
+            <div id="tela-corpo"></div>
+            <button id="tela-btn" class="btn btn-primary" type="button">Continuar</button>
+            <button id="tela-btn2" class="btn btn-secondary" type="button" hidden>Ver a mesa</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="entrada">
+        <p id="dica"></p>
+        <div id="painel-acao"></div>
+        <div class="ferramentas" id="ferramentas">
+          <button id="dica-btn" class="tool-btn" type="button">Dica</button>
+          <button id="yaku-btn" class="tool-btn" type="button" aria-haspopup="dialog" data-abrir="yaku-modal">Tabela de yaku</button>
+        </div>
+      </div>
+
+      <div id="message-container"><div id="message-area" role="status" aria-live="polite"></div></div>
+
+      <div id="placar">
+        <div class="grupo-frota"><span class="grupo-tit" id="gp-jog">Jogadores</span><div class="chips" id="chips-jog" role="list" aria-labelledby="gp-jog"></div></div>
+        <div class="grupo-frota"><span class="grupo-tit" id="gp-diario">Últimas jogadas</span><ul id="diario" aria-labelledby="gp-diario"></ul></div>
+      </div>
+
+      <button id="restart-btn" class="btn btn-primary" type="button">Nova partida</button>
+
+      <div id="config" aria-label="Ajudas">
+        <div class="acc" id="acc-ajuda">
+          <button class="acc-btn" id="ajuda-btn" type="button" aria-expanded="false" aria-controls="ajuda-painel">
+            <span class="opc-txt"><span class="nivel-rotulo">Ajudas</span><b id="ajuda-atual">Robôs em velocidade normal</b></span>
+            <span class="ic" id="ajuda-chevron"></span>
+          </button>
+          <div class="acc-panel" id="ajuda-painel" role="region" aria-labelledby="ajuda-btn">
+            <div>
+              <div class="linha-cfg">
+                <span class="rotulo-cfg">Robôs</span>
+                <div id="op-vel" class="seg" role="group" aria-label="Velocidade dos robôs">
+                  <button class="seg-btn" type="button" data-v="rapido">Rápido</button>
+                  <button class="seg-btn" type="button" data-v="normal">Normal</button>
+                  <button class="seg-btn" type="button" data-v="lento">Lento</button>
+                </div>
+              </div>
+              <div class="linha-cfg">
+                <span class="rotulo-cfg">Esperas</span>
+                <div id="op-esperas" class="seg" role="group" aria-label="Mostrar as esperas ao escolher uma peça">
+                  <button class="seg-btn" type="button" data-v="sim">Mostrar</button>
+                  <button class="seg-btn" type="button" data-v="nao">Esconder</button>
+                </div>
+              </div>
+              <div class="linha-cfg">
+                <span class="rotulo-cfg">No riichi</span>
+                <div id="op-auto" class="seg" role="group" aria-label="Descartar sozinho depois do riichi">
+                  <button class="seg-btn" type="button" data-v="sim">Descartar sozinho</button>
+                  <button class="seg-btn" type="button" data-v="nao">Eu descarto</button>
+                </div>
+              </div>
+              <p id="ajuda-aviso">As ajudas valem na hora e ficam salvas neste aparelho. Usar a Dica tira a partida das estatísticas.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p class="assinatura-final">© Christian, 2026</p>
+  </footer>
+</body>
+</html>

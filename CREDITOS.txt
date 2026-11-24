@@ -1,0 +1,13 @@
+MahjongON! - créditos de terceiros
+
+PEÇAS DE MAHJONG (pecas.svg)
+Autor: FluffyStuff
+Projeto: riichi-mahjong-tiles
+Origem: https://github.com/FluffyStuff/riichi-mahjong-tiles
+Licença: domínio público (CC0 1.0), https://creativecommons.org/publicdomain/zero/1.0/
+O que foi mudado: os arquivos SVG das peças (variante "Regular") foram otimizados com o SVGO e reunidos num só arquivo
+de símbolos. O fundo e a espessura das peças são feitos em CSS.
+
+ÍCONES DO APP (assets/)
+Fonte: DejaVu Sans Bold, parte da Bitstream Vera (© 2003 Bitstream, Inc.). A licença permite uso gratuito, inclusive
+comercial; as mudanças do DejaVu são de domínio público. Origem: https://dejavu-fonts.github.io/
